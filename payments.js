@@ -47,11 +47,14 @@ function renderTabs() {
 }
 
 function fillPF() {
-  const vis = rowsNow().filter(o => !hid(o)), vals = k => [...new Set(vis.map(o => o[k]).filter(Boolean))];
+  const vis = rowsNow().filter(o => !hid(o)), skip = v => /^cloudnerdz$/i.test(v) || /^combined months/i.test(v);
+  const vals = k => [...new Set(vis.map(o => o[k]).filter(v => v && !skip(v)))];
+  const sel = (k, list) => `<span${k === 'Year' ? ' class="in"' : ''}>${k}</span><select data-k="${k}" aria-label="${k}"><option value="">All</option>` +
+    list.map(v => `<option${(P.f[k] || '') === v ? ' selected' : ''}>${esc(v)}</option>`).join('') + '</select>';
   const grp = (k, list, fmt = v => v) => `<div class="frow"><span>${k}</span><div class="seg" data-k="${k}">` +
     ['', ...list].map(v => `<button data-v="${esc(v)}" class="${(P.f[k] || '') === v ? 'on' : ''}">${v === '' ? 'All' : esc(fmt(v))}</button>`).join('') + '</div></div>';
   const rem = vals('Remarks').sort(); if (vis.some(o => !o.Remarks)) rem.push('(none)');
-  $('#pFilters').innerHTML = grp('Year', vals('Year').sort().reverse()) + grp('Month', MONTHS.filter(m => vals('Month').includes(m)), m => m.slice(0, 3)) +
+  $('#pFilters').innerHTML = `<div class="frow">${sel('Month', MONTHS.filter(m => vals('Month').includes(m)))}${sel('Year', vals('Year').sort().reverse())}</div>` +
     grp('Mode of Payment', vals('Mode of Payment').sort()) + grp('Remarks', rem, v => v === '(none)' ? 'None' : v) +
     '<div class="frow acts"><button id="pClear" class="ghost">Clear filters</button><button id="pRefresh" class="ghost">Refresh</button></div>';
 }
@@ -143,6 +146,7 @@ $('#pFilters').onclick = e => {
   else { P.f[b.parentElement.dataset.k] = b.dataset.v; P.page = 1; }
   fillPF(); renderPay();
 };
+$('#pFilters').onchange = e => { const s = e.target.closest('select'); if (!s) return; P.f[s.dataset.k] = s.value; P.page = 1; fillPF(); renderPay(); };
 $('#pHead').onclick = e => { const k = e.target.closest('th')?.dataset.k; if (!k) return; P.dir = P.key === k ? -P.dir : 1; P.key = k; renderPay(); };
 $('#pPager').onclick = e => { const b = e.target.closest('button'); if (b && !b.disabled) { P.page = +b.dataset.p; renderPay(); } };
 $('#pBody').onclick = e => { const tr = e.target.closest('tr.edit'); if (tr) openPay(P.cur[+tr.dataset.i]); };

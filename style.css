@@ -105,3 +105,4 @@ dt{color:var(--mute)}dd{margin:0;word-break:break-word}
 .ferr{color:var(--red);font-weight:600;font-size:13px}
 .danger{border-color:var(--red);color:var(--red)}
 @media(max-width:640px){.form{grid-template-columns:1fr}.frow>span{text-align:left;min-width:100%}}
+.frow .in{min-width:0;margin-left:18px}
