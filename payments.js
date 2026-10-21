@@ -102,7 +102,7 @@ function openPay(o) {
       <label>Received Date<input id="eDate" type="date" value="${d0}"></label>
       <label>Amount<input id="eAmt" type="number" step="0.01" min="0" value="${amt(o.Amount)}"></label>
       <label>Mode of Payment<select id="eMode">${opts(['GCASH', 'Bank Transfer'], o['Mode of Payment'])}</select></label>
-      <label>Reference Number<input id="eRef" value="${esc(o['Reference Number'])}"></label>
+      <label>Reference Number <b class="req">*</b><input id="eRef" required value="${esc(o['Reference Number'])}"></label>
       <label>Remarks (auto)<input id="eRem" readonly value="${esc(o.Remarks)}"></label>
       <label>Facebook Name<input id="eFb" value="${esc(o['Facebook Name'])}"></label></div></section></div>
     <div class="mf"><button class="ghost danger" id="eDel">Delete</button><span class="ferr" id="eMsg"></span><span class="grow"></span><button class="solid" id="eSave">Save changes</button></div>`;
@@ -116,6 +116,7 @@ function openPay(o) {
     g('#eRem').value = moved ? autoRemark(o['Due Date'], v.Month, v.Year, new Date(g('#eDate').value + 'T00:00:00')) : (o.Remarks || '');
   };
   ['#eMonth', '#eYear', '#eDate'].forEach(s => g(s).oninput = recompute);
+  g('#eRef').oninput = () => g('#eRef').classList.remove('invalid');
   const run = async fn => {
     g('#eSave').disabled = g('#eDel').disabled = true; msg('Saving…');
     try { await fn(); dlg.close(); delete P.data.GCASH; loadPay(); }
@@ -123,7 +124,7 @@ function openPay(o) {
   };
   g('#eSave').onclick = () => {
     const v = val(), ch = {};
-    if (!v['Reference Number']) return msg('Reference Number is required');
+    if (!v['Reference Number']) { g('#eRef').classList.add('invalid'); g('#eRef').focus(); return msg('Reference Number is required'); }
     if (!(+v.Amount > 0)) return msg('Enter a valid Amount');
     if (!v.Month || !v.Year || !v['Received Date']) return msg('Month, Year and Received Date are required');
     if (Object.values(P.data).flat().some(x => x !== o && String(x['Reference Number']).replace(/\s/g, '') === v['Reference Number'])) return msg('Reference Number already exists');
@@ -150,8 +151,7 @@ async function openAdd() {
   try { await Promise.all([ensureAll(), S.all.length ? 0 : loadDB()]); }
   catch (e) { dlg.querySelector('.ac').textContent = 'Could not load data (' + e.message + ')'; return; }
   const now = new Date(), opt = (l, c) => l.map(v => `<option${v === c ? ' selected' : ''}>${v}</option>`).join('');
-  dlg.innerHTML = head + `<div class="msearch"><input id="aq" type="search" placeholder="Search member by name or account number" autocomplete="off"><div class="ares" id="ares"></div></div>
-    <div class="nm" id="aNm">&nbsp;</div><div class="ac" id="aAc"></div></div>
+  dlg.innerHTML = head + `<div class="msearch"><input id="aq" type="search" placeholder="Search member by name or account number" autocomplete="off"><div class="ares" id="ares"></div></div></div>
     <div class="dbody"><section class="grp"><h3>Member</h3><dl id="aDl"></dl></section>
     <section class="grp"><h3>Payment</h3><div class="form">
       <label>Month<select id="aMonth">${opt(MONTHS, MONTHS[now.getMonth()])}</select></label>
@@ -159,7 +159,7 @@ async function openAdd() {
       <label>Received Date<input id="aDate" type="date" value="${isoDate(`${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`)}"></label>
       <label>Amount<input id="aAmt" type="number" step="0.01" min="0"></label>
       <label>Mode of Payment<select id="aMode">${opt(['GCASH', 'Bank Transfer'], 'GCASH')}</select></label>
-      <label>Reference Number<input id="aRef" autocomplete="off"></label>
+      <label>Reference Number <b class="req">*</b><input id="aRef" autocomplete="off" required></label>
       <label>Remarks (auto)<input id="aRem" readonly></label>
       <label>Facebook Name<input id="aFb" autocomplete="off"></label></div></section></div>
     <div class="mf"><span class="ferr" id="aMsg"></span><span class="grow"></span><button class="ghost" id="aMore">Save and add another</button><button class="solid" id="aSave">Save</button></div>`;
@@ -176,8 +176,6 @@ async function openAdd() {
   const recompute = () => { g('#aRem').value = pick ? autoRemark(pick.due, g('#aMonth').value, g('#aYear').value, new Date(g('#aDate').value + 'T00:00:00')) : ''; };
   const show = () => {
     const o = pick && pick.o;
-    g('#aNm').textContent = o ? o['Member Name'] : '\u00A0';
-    g('#aAc').innerHTML = o ? `${esc(o['Account Number'])} <span class="b ${o.Status === 'Active' ? '' : 'i'}">${esc(o.Status)}</span>` : 'Select a member to continue';
     g('#aDl').innerHTML = [['Fullname', o && o['Member Name']], ['Account Number', o && o['Account Number']], ['Due Date', pick && pick.due], ['Membership Level', o && o['Membership Level']], ['Server', o && o.Server]]
       .map(([k, v]) => `<dt>${k}</dt><dd>${esc(v || '\u2014')}</dd>`).join('');
     recompute();
@@ -195,13 +193,13 @@ async function openAdd() {
   g('#aq').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); g('#ares button')?.click(); } };
   g('#ares').onclick = e => { const b = e.target.closest('button'); if (b) choose(S.all.find(o => o['Account Number'] === b.dataset.a)); };
   ['#aMonth', '#aYear', '#aDate'].forEach(s => g(s).oninput = recompute);
-  g('#aRef').oninput = () => { const x = refHit(g('#aRef').value.replace(/\s/g, '')); msg(x ? `Reference Number already used: ${x['Account Number']} (${x.Month} ${x.Year}, ${x.Source})` : ''); };
+  g('#aRef').oninput = () => { const x = refHit(g('#aRef').value.replace(/\s/g, '')); g('#aRef').classList.toggle('invalid', !!x); msg(x ? `Reference Number already used: ${x['Account Number']} (${x.Month} ${x.Year}, ${x.Source})` : ''); };
   const save = async again => {
     const v = { Month: g('#aMonth').value, Year: g('#aYear').value.trim(), 'Received Date': mdy(g('#aDate').value), Amount: g('#aAmt').value, 'Mode of Payment': g('#aMode').value,
       'Reference Number': g('#aRef').value.replace(/\s/g, ''), 'Facebook Name': g('#aFb').value.trim(), Remarks: g('#aRem').value };
     if (!pick) return msg('Select a member first');
-    if (!v['Reference Number']) return msg('Reference Number is required');
-    if (refHit(v['Reference Number'])) return msg('Reference Number already exists');
+    if (!v['Reference Number']) { g('#aRef').classList.add('invalid'); g('#aRef').focus(); return msg('Reference Number is required'); }
+    if (refHit(v['Reference Number'])) { g('#aRef').classList.add('invalid'); return msg('Reference Number already exists'); }
     if (!(+v.Amount > 0)) return msg('Enter a valid Amount');
     if (!v.Year || !v['Received Date']) return msg('Year and Received Date are required');
     g('#aSave').disabled = g('#aMore').disabled = true; msg('Saving\u2026', true);
