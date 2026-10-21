@@ -6,7 +6,7 @@
 <title>TELECOOP SLNE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <header class="top">
@@ -40,18 +40,18 @@
     <div class="load"><div class="spin"></div><p>Please wait, gathering data…</p></div>
     <p id="pMeta" class="meta" role="status"></p>
     <div class="stats" id="pStats"></div>
-    <div class="wrap"><table id="pTable"><colgroup id="pCols"></colgroup><thead id="pHead"></thead><tbody id="pBody"></tbody></table></div>
     <div class="pagerbar"><label class="rpp">Rows per page <select id="pSize" aria-label="Rows per page"><option>10</option><option selected>20</option><option>40</option><option>50</option></select></label><div class="pager" id="pPager"></div></div>
+    <div class="wrap"><table id="pTable"><colgroup id="pCols"></colgroup><thead id="pHead"></thead><tbody id="pBody"></tbody></table></div>
   </section>
 </main>
 <dialog id="detail"></dialog>
 <dialog id="pdetail"></dialog>
 <dialog id="padd"></dialog>
 <script>var miss=[];addEventListener('error',function(e){var t=e.target&&e.target.src,m=document.getElementById('meta');if(!m)return;if(t){miss.push(t.split('/').pop());m.innerHTML='<span class="err">Files not found: '+miss.join(', ')+'</span> Upload them next to index.html.'}else m.innerHTML='<span class="err">Script error: '+e.message+'</span>'},true)</script>
-<script src="config.js"></script>
-<script src="api.js"></script>
-<script src="database.js"></script>
-<script src="payments.js"></script>
-<script src="app.js"></script>
+<script src="config.js?v=3"></script>
+<script src="api.js?v=3"></script>
+<script src="database.js?v=3"></script>
+<script src="payments.js?v=3"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

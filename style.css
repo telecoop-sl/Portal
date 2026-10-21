@@ -127,8 +127,10 @@ dt{color:var(--mute)}dd{margin:0;word-break:break-word}
 .req{color:var(--red);font-weight:700}
 .form input.invalid{border-color:var(--red);box-shadow:0 0 0 3px rgba(200,16,46,.15)}
 #pay tbody tr{cursor:pointer}
-.pagerbar{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;margin:18px 0}
-.pagerbar .pager{margin:0}
+.pagerbar{display:flex;align-items:center;justify-content:flex-end;gap:18px;flex-wrap:wrap;margin:0 0 10px}
+.pagerbar .pager{margin:0;justify-content:flex-end}
+.pagerbar .pager .ghost{padding:6px 11px;font-size:13px}
+.loading .pagerbar{display:none}
 .rpp{display:flex;align-items:center;gap:8px;color:var(--mute);font-size:13px;font-weight:600}
 #pSize{min-width:0;padding:6px 10px;color:var(--text)}
 .note{margin:14px 0 0;padding:10px 14px;background:var(--soft);border-left:4px solid var(--red);border-radius:6px;color:var(--mute);font-size:13px}

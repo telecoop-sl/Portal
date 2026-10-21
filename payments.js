@@ -158,9 +158,9 @@ function viewPay(o) {
 
 async function openAdd() {
   const dlg = $('#padd'); let pick = null, added = false;
-  const head = '<div class="mh"><div class="mt"><h2>Add GCASH Payment</h2><button class="ghost" data-x>Close</button></div>';
+  const head = '<div class="mh"><div class="mt"><h2>Add GCASH Payment</h2></div>';
   const wire = () => dlg.querySelectorAll('[data-x]').forEach(b => b.onclick = () => dlg.close());
-  dlg.innerHTML = head + '<div class="ac">Please wait, gathering data\u2026</div></div>'; wire();
+  dlg.innerHTML = head + '<div class="ac">Please wait, gathering data\u2026</div></div><div class="mf"><span class="grow"></span><button class="ghost" data-x>Close</button></div>'; wire();
   dlg.onclose = () => { if (added) { delete P.data.GCASH; loadPay(); } };
   dlg.showModal();
   try { await Promise.all([ensureAll(), S.all.length ? 0 : loadDB()]); }
@@ -177,7 +177,7 @@ async function openAdd() {
       <label>Reference Number <b class="req">*</b><input id="aRef" autocomplete="off" required></label>
       <label>Remarks (auto)<input id="aRem" readonly></label>
       <label>Facebook Name<input id="aFb" autocomplete="off"></label></div></section></div>
-    <div class="mf"><span class="ferr" id="aMsg"></span><span class="grow"></span><button class="ghost" id="aMore">Save and add another</button><button class="solid" id="aSave">Save</button></div>`;
+    <div class="mf"><span class="ferr" id="aMsg"></span><span class="grow"></span><button class="ghost" data-x>Close</button><button class="ghost" id="aMore">Save and add another</button><button class="solid" id="aSave">Save</button></div>`;
   wire();
   const g = s => dlg.querySelector(s), msg = (t, ok) => { const m = g('#aMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); };
   const refHit = r => r && Object.values(P.data).flat().find(x => String(x['Reference Number']).replace(/\s/g, '') === r);
