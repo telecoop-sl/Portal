@@ -12,8 +12,8 @@
 <header class="top">
   <img class="logo" src="assets/telecoop-logo.png" alt="TELECOOP SLNE">
   <nav aria-label="Sections">
-    <button class="on">Database</button>
-    <button disabled title="Coming next">Payments</button>
+    <button class="on" data-s="db">Database</button>
+    <button data-s="pay">Payments</button>
     <button disabled title="Coming next">Overdue</button>
     <button disabled title="Coming next">Dashboard</button>
   </nav>
@@ -32,12 +32,27 @@
     <div class="wrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
     <div class="pager" id="pager"></div>
   </section>
+  <section id="pay" hidden>
+    <div class="ptabs"><div class="seg" id="pTabs" role="group" aria-label="Payment source"></div></div>
+    <div class="search"><input id="pq" type="search" placeholder="Search name, account number or reference number" aria-label="Search payments"></div>
+    <div class="filters">
+      <div class="fld"><span>Year</span><select id="pYear" aria-label="Year"></select></div>
+      <div class="fld"><span>Month</span><select id="pMonth" aria-label="Month"></select></div>
+      <div class="fld"><span>Mode of Payment</span><select id="pMode" aria-label="Mode of Payment"></select></div>
+      <div class="fld"><span>Remarks</span><select id="pRem" aria-label="Remarks"></select></div>
+      <div class="fld acts"><button id="pClear" class="ghost">Clear filters</button><button id="pRefresh" class="ghost">Refresh</button></div>
+    </div>
+    <p id="pMeta" class="meta" role="status"></p>
+    <div class="wrap"><table><thead id="pHead"></thead><tbody id="pBody"></tbody></table></div>
+    <div class="pager" id="pPager"></div>
+  </section>
 </main>
 <dialog id="detail"></dialog>
 <script>var miss=[];addEventListener('error',function(e){var t=e.target&&e.target.src,m=document.getElementById('meta');if(!m)return;if(t){miss.push(t.split('/').pop());m.innerHTML='<span class="err">Files not found: '+miss.join(', ')+'</span> Upload them next to index.html.'}else m.innerHTML='<span class="err">Script error: '+e.message+'</span>'},true)</script>
 <script src="config.js"></script>
 <script src="api.js"></script>
 <script src="database.js"></script>
+<script src="payments.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

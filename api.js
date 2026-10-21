@@ -1,8 +1,8 @@
 const API = {
-  async get(action) {
+  async get(action, extra = '') {
     const c = new AbortController(), t = setTimeout(() => c.abort(), 20000);
     let r;
-    try { r = await fetch(`${CONFIG.API_URL}?action=${action}`, { signal: c.signal }); }
+    try { r = await fetch(`${CONFIG.API_URL}?action=${action}${extra}`, { signal: c.signal }); }
     catch (e) { throw new Error(e.name === 'AbortError' ? 'request timed out after 20 seconds' : 'cannot reach the Apps Script URL'); }
     finally { clearTimeout(t); }
     let j;
