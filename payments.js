@@ -1,4 +1,4 @@
-const P = { tab: 'ALL', data: {}, upd: null, q: '', f: {}, key: 'recent', dir: -1, page: 1, size: 25, started: false, cur: [] };
+const P = { tab: 'ALL', data: {}, upd: null, q: '', f: {}, key: 'recent', dir: -1, page: 1, size: 20, started: false, cur: [] };
 const PCOLS = ['Receipt No.', 'Timestamp', 'Account Number', 'Fullname', 'Month', 'Year', 'Due Date', 'Mode of Payment', 'Reference Number', 'Remarks', 'Received Date', 'Amount', 'Source'];
 const PW = { 'Receipt No.': 7, Timestamp: 11, 'Account Number': 7.5, Fullname: 14, Month: 6.5, Year: 4, 'Due Date': 5, 'Mode of Payment': 7, 'Reference Number': 10.5, Remarks: 6.5, 'Received Date': 7.5, Amount: 7.5, Source: 5 };
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -74,7 +74,7 @@ function renderPay() {
   $('#pCols').innerHTML = cols.map(c => `<col style="width:${(PW[c] / tw * 100).toFixed(2)}%">`).join('');
   $('#pHead').innerHTML = '<tr>' + cols.map(c => `<th data-k="${c}" class="${P.key === c ? 's' + (P.dir < 0 ? ' d' : '') : ''}">${c}</th>`).join('') + '</tr>';
   const cell = (o, c) => c === 'Reference Number' && o['Mode of Payment'] === 'CASH' ? '' : (o[c] || '');
-  $('#pBody').innerHTML = P.cur.length ? P.cur.map((o, i) => `<tr data-i="${i}"${o.Source === 'GCASH' ? ' class="edit" title="Click to edit"' : ''}>` + cols.map(c =>
+  $('#pBody').innerHTML = P.cur.length ? P.cur.map((o, i) => `<tr data-i="${i}" title="${o.Source === 'GCASH' ? 'Click to edit' : 'Click to view'}"${o.Source === 'GCASH' ? ' class="edit"' : ''}>` + cols.map(c =>
     `<td class="${c === 'Fullname' ? 'l' : c === 'Amount' ? 'amt' : ''}" title="${c === 'Fullname' ? esc(o[c]) : ''}">${esc(cell(o, c))}</td>`).join('') + '</tr>').join('')
     : `<tr><td colspan="${cols.length}">No payments match. Clear the search or filters.</td></tr>`;
   const n = x => x.toLocaleString('en-PH'), st = (l, v) => `<div class="st"><small>${l}</small><b>${v}</b></div>`;
@@ -137,6 +137,21 @@ function openPay(o) {
     const b = e.target; if (!b.dataset.arm) { b.dataset.arm = 1; b.textContent = 'Click again to confirm'; setTimeout(() => { delete b.dataset.arm; b.textContent = 'Delete'; }, 4000); return; }
     run(() => API.post('deletePayment', { account: o['Account Number'], stamp: o.Timestamp, orig }));
   };
+  dlg.querySelectorAll('[data-x]').forEach(b => b.onclick = () => dlg.close());
+  dlg.showModal();
+}
+
+// POS1 / POS2: same details, read-only.
+function viewPay(o) {
+  const dlg = $('#pdetail');
+  const row = k => `<dt>${k}</dt><dd>${esc(k === 'Reference Number' && o['Mode of Payment'] === 'CASH' ? '' : o[k]) || '\u2014'}</dd>`;
+  const grp = (t, keys) => `<section class="grp"><h3>${t}</h3><dl>${keys.map(row).join('')}</dl></section>`;
+  dlg.innerHTML = `<div class="mh"><div class="mt"><h2>Payment Information</h2><button class="ghost" data-x>Close</button></div>
+    <div class="nm">${esc(o.Fullname)}</div><div class="ac">${esc(o['Account Number'])} <span class="b">${esc(o.Source)}</span></div></div>
+    <div class="dbody"><p class="note">View only: ${esc(o.Source)} payments can't be edited here.</p>
+    ${grp('Customer', ['Account Number', 'Fullname', 'Due Date', 'Membership Level', 'Server'])}
+    ${grp('Payment', ['Month', 'Year', 'Received Date', 'Amount', 'Mode of Payment', 'Reference Number', 'Remarks'])}
+    ${grp('Record', ['Receipt No.', 'Timestamp', 'Source'])}</div>`;
   dlg.querySelectorAll('[data-x]').forEach(b => b.onclick = () => dlg.close());
   dlg.showModal();
 }
@@ -227,7 +242,8 @@ $('#pFilters').onclick = e => {
 $('#pFilters').onchange = e => { const s = e.target.closest('select'); if (!s) return; P.f[s.dataset.k] = s.value; P.page = 1; fillPF(); renderPay(); };
 $('#pHead').onclick = e => { const k = e.target.closest('th')?.dataset.k; if (!k) return; P.dir = P.key === k ? -P.dir : 1; P.key = k; renderPay(); };
 $('#pPager').onclick = e => { const b = e.target.closest('button'); if (b && !b.disabled) { P.page = +b.dataset.p; renderPay(); } };
-$('#pBody').onclick = e => { const tr = e.target.closest('tr.edit'); if (tr) openPay(P.cur[+tr.dataset.i]); };
+$('#pBody').onclick = e => { const tr = e.target.closest('tr[data-i]'); if (!tr) return; const o = P.cur[+tr.dataset.i]; o.Source === 'GCASH' ? openPay(o) : viewPay(o); };
+$('#pSize').onchange = e => { P.size = +e.target.value; P.page = 1; renderPay(); };
 $('#pAdd').onclick = openAdd;
 $('#padd').onclick = e => { if (e.target === $('#padd')) $('#padd').close(); };
 $('#pdetail').onclick = e => { if (e.target === $('#pdetail')) $('#pdetail').close(); };
