@@ -3,9 +3,9 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const COLS = ['Status', 'Account Number', 'Member Name', 'PPPoE Name', 'Area', 'Due Date', 'Membership Level'];
 const GROUPS = {
   'Contact': ['Phone Number', 'Email', 'Address', 'LatLong'],
-  'Account': ['Account Number', 'Member ID', 'Status', 'Date of Install', 'Submission Date', 'Server', 'Due Date', 'Area'],
+  'Account': ['Member ID', 'Status', 'Date of Install', 'Submission Date', 'Server'],
   'Service': ['PPPoE Name', 'MAC Address', 'PON', 'NAP', 'PORT', 'Modem Type'],
-  'Membership and fees': ['Membership Level', 'Membership', 'Membership Fee', 'Additional Equipments', 'Additional Fee', 'Promo Duration', 'Receipt No.'],
+  'Membership and fees': ['Membership', 'Membership Fee', 'Additional Equipments', 'Additional Fee', 'Promo Duration', 'Receipt No.'],
   'Referral': ['Referral Fullname', 'Referral Status', 'Referral Fee', 'Referral Log'],
   'Logs': ['Last Update Log', 'Last User Update']
 };
@@ -73,20 +73,25 @@ function render() {
     c === 'Status' ? `<td><span class="b ${o[c] === 'Active' ? '' : 'i'}">${esc(o[c])}</span></td>` : `<td>${esc(o[c] || '—')}</td>`).join('') + '</tr>').join('')
     : `<tr><td colspan="${COLS.length}">No customers match. Clear the search or filters.</td></tr>`;
   $('#meta').textContent = `${S.view.length} of ${S.all.length} customers · ${S.key === 'recent' ? 'Newest first · ' : ''}Updated ${S.updated.toLocaleTimeString()}`;
-  $('#pg').textContent = `Page ${S.page} of ${pages}`;
-  $('#prev').disabled = S.page <= 1; $('#next').disabled = S.page >= pages;
+  const p = S.page, s0 = Math.max(1, Math.min(p - 2, pages - 4)), e0 = Math.min(pages, s0 + 4);
+  const pb = (l, n, off, on) => `<button class="ghost${on ? ' on' : ''}" data-p="${n}"${off ? ' disabled' : ''}>${l}</button>`;
+  let ph = pb('First', 1, p <= 1) + pb('Previous', p - 1, p <= 1);
+  for (let i = s0; i <= e0; i++) ph += pb(i, i, false, i === p);
+  $('#pager').innerHTML = ph + pb('Next', p + 1, p >= pages) + pb('Last', pages, p >= pages) + `<span class="meta">Page ${p} of ${pages}</span>`;
 }
 
 function openDetail(acct) {
   const o = S.all.find(x => x['Account Number'] === acct); if (!o) return;
-  const used = new Set(['Member Name', '_s', 'First Name', 'Middle Name', 'Last Name', 'Suffix']);
-  const val = (k, v) => !v ? '—' : k === 'LatLong' && /^-?\d+(\.\d+)?\s*,\s*-?\d+/.test(v)
-    ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(v)}" target="_blank" rel="noopener">${esc(v)}</a>` : esc(v);
-  const sec = (t, keys) => `<h3>${t}</h3><dl>` + keys.map(k => { used.add(k); return `<dt>${k}</dt><dd>${val(k, o[k])}</dd>`; }).join('') + '</dl>';
-  let html = Object.entries(GROUPS).map(([t, k]) => sec(t, k)).join('');
-  const rest = Object.keys(o).filter(k => !used.has(k) && !GROUPS['Contact'].includes(k));
-  if (rest.length) html += sec('Other', rest);
-  $('#detail').innerHTML = `<div class="dh"><div><h2>${esc(o['Member Name'])}</h2><p>${esc(o['Account Number'])} · ${esc(o.Status)}</p></div><button class="ghost" id="close">Close</button></div><div class="dbody">${html}</div>`;
+  const val = (k, v) => !v ? '—' : k === 'LatLong'
+    ? `<span>${esc(v)}</span>` + (/^-?\d+(\.\d+)?\s*,\s*-?\d+/.test(v) ? `<button class="mini" data-map="${esc(v)}">Maps</button>` : '') : esc(v);
+  const sec = (t, keys) => `<section class="grp"><h3>${t}</h3><dl>` + keys.map(k => `<dt>${k}</dt><dd>${val(k, o[k])}</dd>`).join('') + '</dl></section>';
+  const known = new Set(Object.values(GROUPS).flat().concat(['Account Number', 'Area', 'Due Date', 'Membership Level', 'Member Name', 'First Name', 'Middle Name', 'Last Name', 'Suffix']));
+  const rest = Object.keys(o).filter(k => k[0] !== '_' && !known.has(k));
+  const sum = ['Account Number', 'Area', 'Due Date', 'Membership Level'];
+  $('#detail').innerHTML = `<div class="mh"><div class="mt"><h2>Customer Information</h2><button class="ghost" id="close">Close</button></div>
+    <div class="nm">${esc(o['Member Name'])}</div><div class="ac">${esc(o['Account Number'])} <span class="b ${o.Status === 'Active' ? '' : 'i'}">${esc(o.Status)}</span></div>
+    <div class="sumwrap"><table class="sum"><thead><tr>${sum.map(k => `<th>${k}</th>`).join('')}</tr></thead><tbody><tr>${sum.map(k => `<td>${esc(o[k] || '—')}</td>`).join('')}</tr></tbody></table></div></div>
+    <div class="dbody">${Object.entries(GROUPS).map(([t, k]) => sec(t, k)).join('') + (rest.length ? sec('Other', rest) : '')}</div>`;
   $('#detail').showModal();
   $('#close').onclick = () => $('#detail').close();
 }
@@ -95,9 +100,11 @@ $('#q').oninput = e => { S.q = e.target.value; S.page = 1; render(); };
 for (const [k, sel] of Object.entries(FILTERS)) $(sel).onchange = e => { S.f[k] = e.target.value; S.page = 1; render(); };
 $('#thead').onclick = e => { const k = e.target.closest('th')?.dataset.k; if (!k) return; S.dir = S.key === k ? -S.dir : 1; S.key = k; render(); };
 $('#tbody').onclick = e => { const a = e.target.closest('tr')?.dataset.a; if (a) openDetail(a); };
-$('#prev').onclick = () => { S.page--; render(); };
-$('#next').onclick = () => { S.page++; render(); };
+$('#pager').onclick = e => { const b = e.target.closest('button'); if (b && !b.disabled) { S.page = +b.dataset.p; render(); } };
 $('#refresh').onclick = loadDB;
 $('#fStatus').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.f.Status = b.dataset.v; S.page = 1; render(); };
 $('#clear').onclick = () => { S.q = ''; S.f = {}; S.key = 'recent'; S.dir = -1; S.page = 1; $('#q').value = ''; fillFilters(); render(); };
-$('#detail').onclick = e => { if (e.target === $('#detail')) $('#detail').close(); };
+$('#detail').onclick = e => {
+  if (e.target === $('#detail')) $('#detail').close();
+  const m = e.target.closest('[data-map]'); if (m) window.open('https://www.google.com/maps?q=' + encodeURIComponent(m.dataset.map), '_blank', 'noopener');
+};
