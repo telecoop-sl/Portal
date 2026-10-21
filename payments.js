@@ -19,20 +19,23 @@ function autoRemark(due, month, year, rd) {
   return diff < 0 ? 'Advanced' : diff === 0 ? (day < dueDay ? 'Advanced' : '') : diff === 1 ? (day <= 1 ? '' : 'Delayed') : 'Delayed';
 }
 
+const fin = (o, t, i) => {
+  o.Source = t; o._i = i; o._d = ts(o['Received Date']); o._t = ts(o.Timestamp); o._a = amt(o.Amount); o._m = MONTHS.indexOf(o.Month);
+  o._s = norm([o.Fullname, o['Account Number'], o['Reference Number']].join(' ')); return o;
+};
+async function fetchTab(t) {
+  const r = await API.get('payments', '&tab=' + t);
+  P.data[t] = r.rows.map((a, i) => { const o = {}; r.cols.forEach((c, j) => o[c] = a[j]); return fin(o, t, i); });
+}
+const ensureAll = () => Promise.all(['GCASH', 'POS1', 'POS2'].filter(t => !P.data[t]).map(fetchTab));
+
 async function loadPay() {
   P.started = true; renderTabs();
   const need = tabsFor(P.tab).filter(t => !P.data[t]);
   if (need.length) $('#pay').classList.add('loading');
   $('#pMeta').textContent = '';
   try {
-    await Promise.all(need.map(async t => {
-      const r = await API.get('payments', '&tab=' + t);
-      P.data[t] = r.rows.map((a, i) => {
-        const o = {}; r.cols.forEach((c, j) => o[c] = a[j]);
-        o.Source = t; o._i = i; o._d = ts(o['Received Date']); o._t = ts(o.Timestamp); o._a = amt(o.Amount); o._m = MONTHS.indexOf(o.Month);
-        o._s = norm([o.Fullname, o['Account Number'], o['Reference Number']].join(' ')); return o;
-      });
-    }));
+    await Promise.all(need.map(fetchTab));
     if (need.length) P.upd = new Date();
     fillPF(); renderPay();
   } catch (e) { $('#pMeta').innerHTML = `<span class="err">Could not load payments (${esc(e.message)}).</span>`; }
@@ -137,6 +140,83 @@ function openPay(o) {
   dlg.showModal();
 }
 
+async function openAdd() {
+  const dlg = $('#padd'); let pick = null, added = false;
+  const head = '<div class="mh"><div class="mt"><h2>Add GCASH Payment</h2><button class="ghost" data-x>Close</button></div>';
+  const wire = () => dlg.querySelectorAll('[data-x]').forEach(b => b.onclick = () => dlg.close());
+  dlg.innerHTML = head + '<div class="ac">Please wait, gathering data\u2026</div></div>'; wire();
+  dlg.onclose = () => { if (added) { delete P.data.GCASH; loadPay(); } };
+  dlg.showModal();
+  try { await Promise.all([ensureAll(), S.all.length ? 0 : loadDB()]); }
+  catch (e) { dlg.querySelector('.ac').textContent = 'Could not load data (' + e.message + ')'; return; }
+  const now = new Date(), opt = (l, c) => l.map(v => `<option${v === c ? ' selected' : ''}>${v}</option>`).join('');
+  dlg.innerHTML = head + `<div class="msearch"><input id="aq" type="search" placeholder="Search member by name or account number" autocomplete="off"><div class="ares" id="ares"></div></div>
+    <div class="nm" id="aNm">&nbsp;</div><div class="ac" id="aAc"></div></div>
+    <div class="dbody"><section class="grp"><h3>Member</h3><dl id="aDl"></dl></section>
+    <section class="grp"><h3>Payment</h3><div class="form">
+      <label>Month<select id="aMonth">${opt(MONTHS, MONTHS[now.getMonth()])}</select></label>
+      <label>Year<input id="aYear" type="number" value="${now.getFullYear()}"></label>
+      <label>Received Date<input id="aDate" type="date" value="${isoDate(`${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`)}"></label>
+      <label>Amount<input id="aAmt" type="number" step="0.01" min="0"></label>
+      <label>Mode of Payment<select id="aMode">${opt(['GCASH', 'Bank Transfer'], 'GCASH')}</select></label>
+      <label>Reference Number<input id="aRef" autocomplete="off"></label>
+      <label>Remarks (auto)<input id="aRem" readonly></label>
+      <label>Facebook Name<input id="aFb" autocomplete="off"></label></div></section></div>
+    <div class="mf"><span class="ferr" id="aMsg"></span><span class="grow"></span><button class="ghost" id="aMore">Save and add another</button><button class="solid" id="aSave">Save</button></div>`;
+  wire();
+  const g = s => dlg.querySelector(s), msg = (t, ok) => { const m = g('#aMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); };
+  const refHit = r => r && Object.values(P.data).flat().find(x => String(x['Reference Number']).replace(/\s/g, '') === r);
+  const dueFor = o => {
+    let b = null;
+    for (const x of Object.values(P.data).flat()) if (x['Account Number'] === o['Account Number'] && x['Due Date']) {
+      const k = +x.Year * 12 + x._m; if (!b || k > b.k || (k === b.k && (x._d > b.d || (x._d === b.d && x._t > b.t)))) b = { k, d: x._d, t: x._t, v: x['Due Date'] };
+    }
+    return b ? b.v : ({ AKINSE: '15th', ATRENTA: '30th' }[o['Due Date']] || '');
+  };
+  const recompute = () => { g('#aRem').value = pick ? autoRemark(pick.due, g('#aMonth').value, g('#aYear').value, new Date(g('#aDate').value + 'T00:00:00')) : ''; };
+  const show = () => {
+    const o = pick && pick.o;
+    g('#aNm').textContent = o ? o['Member Name'] : '\u00A0';
+    g('#aAc').innerHTML = o ? `${esc(o['Account Number'])} <span class="b ${o.Status === 'Active' ? '' : 'i'}">${esc(o.Status)}</span>` : 'Select a member to continue';
+    g('#aDl').innerHTML = [['Fullname', o && o['Member Name']], ['Account Number', o && o['Account Number']], ['Due Date', pick && pick.due], ['Membership Level', o && o['Membership Level']], ['Server', o && o.Server]]
+      .map(([k, v]) => `<dt>${k}</dt><dd>${esc(v || '\u2014')}</dd>`).join('');
+    recompute();
+  };
+  const choose = o => {
+    pick = { o, due: dueFor(o) }; g('#aq').value = ''; g('#ares').innerHTML = '';
+    const m = String(o['Membership Level']).match(/(\d+)\s*$/); if (m) g('#aAmt').value = m[1];
+    show(); msg(''); g('#aRef').focus();
+  };
+  g('#aq').oninput = e => {
+    const q = norm(e.target.value.trim()); if (!q) { g('#ares').innerHTML = ''; return; }
+    const hits = S.all.filter(o => (o._n || (o._n = norm(o['Member Name'] + ' ' + o['Account Number']))).includes(q)).slice(0, 8);
+    g('#ares').innerHTML = hits.length ? hits.map(o => `<button data-a="${esc(o['Account Number'])}"><b>${esc(o['Member Name'])}</b><span>${esc(o['Account Number'])}</span><i class="b ${o.Status === 'Active' ? '' : 'i'}">${esc(o.Status)}</i></button>`).join('') : '<p>No member found</p>';
+  };
+  g('#aq').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); g('#ares button')?.click(); } };
+  g('#ares').onclick = e => { const b = e.target.closest('button'); if (b) choose(S.all.find(o => o['Account Number'] === b.dataset.a)); };
+  ['#aMonth', '#aYear', '#aDate'].forEach(s => g(s).oninput = recompute);
+  g('#aRef').oninput = () => { const x = refHit(g('#aRef').value.replace(/\s/g, '')); msg(x ? `Reference Number already used: ${x['Account Number']} (${x.Month} ${x.Year}, ${x.Source})` : ''); };
+  const save = async again => {
+    const v = { Month: g('#aMonth').value, Year: g('#aYear').value.trim(), 'Received Date': mdy(g('#aDate').value), Amount: g('#aAmt').value, 'Mode of Payment': g('#aMode').value,
+      'Reference Number': g('#aRef').value.replace(/\s/g, ''), 'Facebook Name': g('#aFb').value.trim(), Remarks: g('#aRem').value };
+    if (!pick) return msg('Select a member first');
+    if (!v['Reference Number']) return msg('Reference Number is required');
+    if (refHit(v['Reference Number'])) return msg('Reference Number already exists');
+    if (!(+v.Amount > 0)) return msg('Enter a valid Amount');
+    if (!v.Year || !v['Received Date']) return msg('Year and Received Date are required');
+    g('#aSave').disabled = g('#aMore').disabled = true; msg('Saving\u2026', true);
+    try {
+      const r = await API.post('addPayment', { account: pick.o['Account Number'], values: v });
+      P.data.GCASH.push(fin({ ...r.row, Amount: peso(+v.Amount), 'Customer Status': pick.o.Status }, 'GCASH', P.data.GCASH.length)); added = true; renderPay();
+      if (again) { const nm = pick.o['Member Name']; pick = null; ['#aRef', '#aAmt', '#aFb'].forEach(s => g(s).value = ''); show(); msg(`Saved: ${nm}`, true); g('#aq').focus(); }
+      else dlg.close();
+    } catch (e) { msg(e.message === 'cancelled' ? '' : e.message); }
+    g('#aSave').disabled = g('#aMore').disabled = false;
+  };
+  g('#aSave').onclick = () => save(false); g('#aMore').onclick = () => save(true);
+  show(); g('#aq').focus();
+}
+
 $('#pTabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; P.tab = b.dataset.t; P.page = 1; P.f = {}; P.key = 'recent'; P.dir = -1; loadPay(); };
 $('#pq').oninput = e => { P.q = e.target.value; P.page = 1; renderPay(); };
 $('#pFilters').onclick = e => {
@@ -150,4 +230,6 @@ $('#pFilters').onchange = e => { const s = e.target.closest('select'); if (!s) r
 $('#pHead').onclick = e => { const k = e.target.closest('th')?.dataset.k; if (!k) return; P.dir = P.key === k ? -P.dir : 1; P.key = k; renderPay(); };
 $('#pPager').onclick = e => { const b = e.target.closest('button'); if (b && !b.disabled) { P.page = +b.dataset.p; renderPay(); } };
 $('#pBody').onclick = e => { const tr = e.target.closest('tr.edit'); if (tr) openPay(P.cur[+tr.dataset.i]); };
+$('#pAdd').onclick = openAdd;
+$('#padd').onclick = e => { if (e.target === $('#padd')) $('#padd').close(); };
 $('#pdetail').onclick = e => { if (e.target === $('#pdetail')) $('#pdetail').close(); };

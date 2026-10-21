@@ -106,3 +106,14 @@ dt{color:var(--mute)}dd{margin:0;word-break:break-word}
 .danger{border-color:var(--red);color:var(--red)}
 @media(max-width:640px){.form{grid-template-columns:1fr}.frow>span{text-align:left;min-width:100%}}
 .frow .in{min-width:0;margin-left:18px}
+#pAdd{border-radius:999px;padding:12px 22px;white-space:nowrap}
+.search{flex-wrap:wrap;gap:12px;align-items:center}
+.msearch{position:relative;max-width:560px;margin:0 auto 12px;text-align:left}
+.msearch input{width:100%;font:inherit;color:#141416;background:#fff;border:1px solid var(--line);border-radius:999px;padding:11px 18px}
+.ares{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:5;overflow:hidden}
+.ares button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:9px 14px;font:inherit;text-align:left;cursor:pointer;color:#141416}
+.ares button:hover{background:rgba(200,16,46,.08)}
+.ares button span{color:var(--mute);margin-left:auto;font-variant-numeric:tabular-nums}
+.ares i{font-style:normal}
+.ares p{margin:0;padding:10px 14px;color:var(--mute)}
+.ferr.ok{color:var(--text)}

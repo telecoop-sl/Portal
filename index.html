@@ -34,7 +34,7 @@
     <div class="pager" id="pager"></div>
   </section>
   <section id="pay" hidden>
-    <div class="search"><input id="pq" type="search" placeholder="Search name, account number or reference number" aria-label="Search payments"></div>
+    <div class="search"><input id="pq" type="search" placeholder="Search name, account number or reference number" aria-label="Search payments"><button id="pAdd" class="solid">+ Add GCASH Payment</button></div>
     <div class="ptabs"><div class="seg" id="pTabs" role="group" aria-label="Payment source"></div></div>
     <div class="filters fl2" id="pFilters"></div>
     <div class="load"><div class="spin"></div><p>Please wait, gathering data…</p></div>
@@ -46,6 +46,7 @@
 </main>
 <dialog id="detail"></dialog>
 <dialog id="pdetail"></dialog>
+<dialog id="padd"></dialog>
 <script>var miss=[];addEventListener('error',function(e){var t=e.target&&e.target.src,m=document.getElementById('meta');if(!m)return;if(t){miss.push(t.split('/').pop());m.innerHTML='<span class="err">Files not found: '+miss.join(', ')+'</span> Upload them next to index.html.'}else m.innerHTML='<span class="err">Script error: '+e.message+'</span>'},true)</script>
 <script src="config.js"></script>
 <script src="api.js"></script>
