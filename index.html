@@ -10,24 +10,24 @@
 </head>
 <body>
 <header class="top">
-  <div class="brand"><img src="assets/logo.png" alt="" onerror="this.remove()"><span>TELECOOP SLNE</span></div>
+  <button id="theme" class="ghost" aria-label="Toggle dark mode">Dark mode</button>
+  <img class="logo" src="assets/telecoop-logo.png" alt="TELECOOP SLNE">
   <nav aria-label="Sections">
     <button class="on">Database</button>
     <button disabled title="Coming next">Payments</button>
     <button disabled title="Coming next">Overdue</button>
     <button disabled title="Coming next">Dashboard</button>
   </nav>
-  <button id="theme" class="ghost" aria-label="Toggle dark mode">Dark mode</button>
 </header>
 <main>
   <section id="db">
-    <div class="bar">
-      <input id="q" type="search" placeholder="Search name, account number, PPPoE, phone or address" aria-label="Search customers">
-      <select id="fStatus" aria-label="Status"></select>
-      <select id="fArea" aria-label="Area"></select>
-      <select id="fDue" aria-label="Due Date"></select>
-      <select id="fLevel" aria-label="Membership Level"></select>
-      <button id="refresh" class="ghost">Refresh</button>
+    <div class="search"><input id="q" type="search" placeholder="Search name, account number, PPPoE, phone or address" aria-label="Search customers"></div>
+    <div class="filters">
+      <div class="fld"><span>Status</span><div class="seg" id="fStatus" role="group" aria-label="Status"></div></div>
+      <div class="fld"><span>Area</span><select id="fArea" aria-label="Area"></select></div>
+      <div class="fld"><span>Due Date</span><select id="fDue" aria-label="Due Date"></select></div>
+      <div class="fld"><span>Membership Level</span><select id="fLevel" aria-label="Membership Level"></select></div>
+      <div class="fld acts"><button id="clear" class="ghost">Clear filters</button><button id="refresh" class="ghost">Refresh</button></div>
     </div>
     <p id="meta" class="meta" role="status">Loading…</p>
     <div class="wrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
