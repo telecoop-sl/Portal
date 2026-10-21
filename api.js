@@ -9,5 +9,19 @@ const API = {
     try { j = await r.json(); } catch (e) { throw new Error('response is not JSON - set the web app access to "Anyone" and use the /exec URL'); }
     if (!j.ok) throw new Error(j.error);
     return j;
+  },
+  // Writes use POST with a plain-text body (no CORS preflight). If EDIT_PIN is set in Script properties, the PIN is asked once per session.
+  async post(action, data) {
+    const send = async () => {
+      const r = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ ...data, action, pin: sessionStorage.getItem('pin') || '' }) });
+      return r.json();
+    };
+    let j = await send();
+    if (!j.ok && j.error === 'pin') {
+      const p = prompt('Enter the edit PIN'); if (p === null) throw new Error('cancelled');
+      sessionStorage.setItem('pin', p); j = await send();
+    }
+    if (!j.ok) throw new Error(j.error);
+    return j;
   }
 };

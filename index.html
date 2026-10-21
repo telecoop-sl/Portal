@@ -28,26 +28,24 @@
       <div class="fld"><span>Membership Level</span><select id="fLevel" aria-label="Membership Level"></select></div>
       <div class="fld acts"><button id="clear" class="ghost">Clear filters</button><button id="refresh" class="ghost">Refresh</button></div>
     </div>
+    <div class="load"><div class="spin"></div><p>Please wait, gathering data…</p></div>
     <p id="meta" class="meta" role="status">Loading…</p>
     <div class="wrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
     <div class="pager" id="pager"></div>
   </section>
   <section id="pay" hidden>
-    <div class="ptabs"><div class="seg" id="pTabs" role="group" aria-label="Payment source"></div></div>
     <div class="search"><input id="pq" type="search" placeholder="Search name, account number or reference number" aria-label="Search payments"></div>
-    <div class="filters">
-      <div class="fld"><span>Year</span><select id="pYear" aria-label="Year"></select></div>
-      <div class="fld"><span>Month</span><select id="pMonth" aria-label="Month"></select></div>
-      <div class="fld"><span>Mode of Payment</span><select id="pMode" aria-label="Mode of Payment"></select></div>
-      <div class="fld"><span>Remarks</span><select id="pRem" aria-label="Remarks"></select></div>
-      <div class="fld acts"><button id="pClear" class="ghost">Clear filters</button><button id="pRefresh" class="ghost">Refresh</button></div>
-    </div>
+    <div class="ptabs"><div class="seg" id="pTabs" role="group" aria-label="Payment source"></div></div>
+    <div class="filters fl2" id="pFilters"></div>
+    <div class="load"><div class="spin"></div><p>Please wait, gathering data…</p></div>
     <p id="pMeta" class="meta" role="status"></p>
-    <div class="wrap"><table><thead id="pHead"></thead><tbody id="pBody"></tbody></table></div>
+    <div class="stats" id="pStats"></div>
+    <div class="wrap"><table id="pTable"><colgroup id="pCols"></colgroup><thead id="pHead"></thead><tbody id="pBody"></tbody></table></div>
     <div class="pager" id="pPager"></div>
   </section>
 </main>
 <dialog id="detail"></dialog>
+<dialog id="pdetail"></dialog>
 <script>var miss=[];addEventListener('error',function(e){var t=e.target&&e.target.src,m=document.getElementById('meta');if(!m)return;if(t){miss.push(t.split('/').pop());m.innerHTML='<span class="err">Files not found: '+miss.join(', ')+'</span> Upload them next to index.html.'}else m.innerHTML='<span class="err">Script error: '+e.message+'</span>'},true)</script>
 <script src="config.js"></script>
 <script src="api.js"></script>
