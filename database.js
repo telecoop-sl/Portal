@@ -34,7 +34,6 @@ async function loadDB() {
     S.updated = new Date(r.updated);
     fillFilters(); render();
   } catch (e) {
-    if (e.message === 'auth') { localStorage.removeItem('akey'); askKey(); return; }
     $('#meta').innerHTML = `<span class="err">Could not load data (${esc(e.message)}).</span> Check the Apps Script URL in config.js and that the web app is deployed for “Anyone”.`;
   }
 }
